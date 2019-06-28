@@ -63,7 +63,7 @@ def processAddress(address, level):
 processedAddresses = []
 addressToIndex = {}
 indexToAddress = {}
-edges{}
+edges = {}
 
 adjMat_dir = []
 adjMat_undir = []
