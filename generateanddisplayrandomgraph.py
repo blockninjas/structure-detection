@@ -161,7 +161,6 @@ def compareDir(node1InFeatures, node2InFeatures, node1OutFeatures, node2OutFeatu
   return (indexes1In, indexes1Out, diff1) if diff1 < diff2 else (indexes2In, indexes2Out, diff2)
 
 def diff(v):
-  print v
   diffVal = 0
   for data in v:
     diffVal = diffVal + numpy.power(data[2], 2)
@@ -175,6 +174,13 @@ def printPairs(pairs):
   for pair in pairs:
     if pair[0] != pair[1]:
       print pair[0], "vs.", pair[1], "=", pair[2]
+
+def printPairsIndexed(pairs, indexToElement):
+  for pair in pairs:
+    if pair[0] != pair[1]:
+      print indexToElement[pair[0]], "(", pair[0], ")", "vs.", indexToElement[pair[1]], "(", pair[1], ")", "=", pair[2]
+
+
 
 def cleanFeatureMatrix(featureMatrix):
   finishedMatrix = []
