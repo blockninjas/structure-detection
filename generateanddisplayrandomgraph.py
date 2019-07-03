@@ -13,7 +13,7 @@ import matplotlib.cm as cm
 import warnings
 import sys
 warnings.simplefilter("ignore")
-nodeCount = 25
+nodeCount = 12
 
 def sqrUndir(v1, v2):
   error = 0
@@ -72,11 +72,56 @@ def compareUndirPart(node1Features, node2Features):
       bestIndexes.append((index1, maxIndex, dists[maxIndex]))
   return bestIndexes
 
+def compareDirPart(node1InFeatures, node2InFeatures, node1OutFeatures, node2OutFeatures):
+  indexesUsed = []
+  bestIndexes = []
+  #print "data:", len(node1InFeatures), len(node2InFeatures), len(node1OutFeatures), len(node2OutFeatures)
+  #print node1InFeatures
+  #print node2InFeatures
+  #print node1OutFeatures
+  #print node2OutFeatures
+  maxLen = len(node1InFeatures)
+  if maxLen > len(node2InFeatures):
+    maxLen = len(node2InFeatures)
+  if maxLen > len(node1OutFeatures):
+    maxLen = len(node1OutFeatures)
+  if maxLen > len(node2OutFeatures):
+    maxLen = len(node2OutFeatures)
+  #print maxLen
+
+  for index1 in range(0, maxLen):
+    dists = []
+    for index2 in range(0, maxLen):
+      #print node1Features[index1]
+      #print node2Features[index2]
+      v1 = numpy.log(node1InFeatures[index1])
+      v2 = numpy.log(node2InFeatures[index2])
+      v3 = numpy.log(node1OutFeatures[index1])
+      v4 = numpy.log(node2OutFeatures[index2])
+      cleanInfValues(v1)
+      cleanInfValues(v2)
+      cleanInfValues(v3)
+      cleanInfValues(v4)
+      test1 = sqrUndir(v1, v2)
+      test2 = sqrUndir(v3, v4)
+      dist = test1 + test2
+      dists.append(dist)
+    maxIndex = -1
+    for index in range(0, len(dists)):
+      if maxIndex == -1 and index not in indexesUsed:
+        maxIndex = index
+      elif dists[maxIndex] > dists[index] and index not in indexesUsed:
+        maxIndex = index
+    if maxIndex != -1:
+      indexesUsed.append(maxIndex)
+      bestIndexes.append((index1, maxIndex, dists[maxIndex]))
+  return bestIndexes
+
 def cleanInfValues(v):
   for index in range(0, len(v)):
     if v[index] == numpy.NINF:
       v[index] = 0
-
+"""
 def compareDirPart(node1InFeatures, node2InFeatures, node1OutFeatures, node2OutFeatures):
   '''
   indexesUsed = []
@@ -112,7 +157,7 @@ def compareDirPart(node1InFeatures, node2InFeatures, node1OutFeatures, node2OutF
   indexesIn = compareUndirPart(node1InFeatures, node2InFeatures)
   indexesOut = compareUndirPart(node1OutFeatures, node2OutFeatures)
   return (indexesIn, indexesOut)
-
+"""
 def compareUndir(node1Features, node2Features):
   if node1Features[0][0] == 0 and node2Features[0][0] == 0:
     return ([(0, 0)], 0.0)
@@ -136,12 +181,12 @@ def cutMatrixElementsToLength(nodeFeatures, length):
 
 def compareDir(node1InFeatures, node2InFeatures, node1OutFeatures, node2OutFeatures):
   if node1InFeatures[0][0] == 0 and node1OutFeatures[0][0] == 0 and node2InFeatures[0][0] == 0 and node2OutFeatures[0][0] == 0:
-    return ([(0, 0)], [(0, 0)], 0.0)
+    return ([(0, 0)], 0.0)
   elif (
         ((node1InFeatures[0][0] == 0 and node2InFeatures[0][0] != 0) or (node1InFeatures[0][0] != 0 and node2InFeatures[0][0] == 0)) or 
         ((node1OutFeatures[0][0] == 0 and node2OutFeatures[0][0] != 0) or (node1OutFeatures[0][0] != 0 and node2OutFeatures[0][0] == 0))
        ):
-    return ([(0, 0)], [(0, 0)], numpy.inf)
+    return ([(0, 0)], numpy.inf)
   lengthIn = len(node1InFeatures[0]) if len(node1InFeatures[0]) < len(node2InFeatures[0]) else len(node2InFeatures[0])
   lengthOut = len(node1OutFeatures[0]) if len(node1OutFeatures[0]) < len(node2OutFeatures[0]) else len(node2OutFeatures[0])
   node1InFeaturesLocal = cutMatrixElementsToLength(node1InFeatures, lengthIn)
@@ -149,16 +194,16 @@ def compareDir(node1InFeatures, node2InFeatures, node1OutFeatures, node2OutFeatu
   node1OutFeaturesLocal = cutMatrixElementsToLength(node1OutFeatures, lengthOut)
   node2OutFeaturesLocal = cutMatrixElementsToLength(node2OutFeatures, lengthOut)
 
-  indexes1In, indexes1Out = compareDirPart(node1InFeaturesLocal, node2InFeaturesLocal, node1OutFeaturesLocal, node2OutFeaturesLocal)
-  indexes2In, indexes2Out = compareDirPart(node2InFeaturesLocal, node1InFeaturesLocal, node2OutFeaturesLocal, node1OutFeaturesLocal)
-
-  diff1In = diff(indexes1In)
-  diff1Out = diff(indexes1Out)
-  diff2In = diff(indexes2In)
-  diff2Out = diff(indexes2Out)
-  diff1 = diff1In + diff1Out
-  diff2 = diff2In + diff2Out
-  return (indexes1In, indexes1Out, diff1) if diff1 < diff2 else (indexes2In, indexes2Out, diff2)
+  indexes1 = compareDirPart(node1InFeaturesLocal, node2InFeaturesLocal, node1OutFeaturesLocal, node2OutFeaturesLocal)
+  indexes2 = compareDirPart(node2InFeaturesLocal, node1InFeaturesLocal, node2OutFeaturesLocal, node1OutFeaturesLocal)
+  diff1 = diff(indexes1)
+  diff2 = diff(indexes2)
+  #print "diff1In", diff1In
+  #print "diff1Out", diff1Out
+  #print "diff2In", diff2In
+  #print "diff2Out", diff2Out
+  print "returning", (indexes1, diff1) if diff1 < diff2 else (indexes2, diff2) 
+  return (indexes1, diff1) if diff1 < diff2 else (indexes2, diff2)
 
 def diff(v):
   diffVal = 0
@@ -179,8 +224,6 @@ def printPairsIndexed(pairs, indexToElement):
   for pair in pairs:
     if pair[0] != pair[1]:
       print indexToElement[pair[0]], "(", pair[0], ")", "vs.", indexToElement[pair[1]], "(", pair[1], ")", "=", pair[2]
-
-
 
 def cleanFeatureMatrix(featureMatrix):
   finishedMatrix = []
@@ -211,6 +254,7 @@ def calcDiffsUndir(adjMat, DegMat):
   for index1 in range(0, len(normalizedMatrix)):
     for index2 in range(index1 + 1, len(normalizedMatrix)):
       cVal = compareUndir(normalizedMatrix[index1], normalizedMatrix[index2])
+      print cVal
       pairs.append((index1, index2, cVal[1]))
       keyPairs[(index1, index2)] = cVal[1]
 
@@ -238,8 +282,9 @@ def calcDiffsDir(adjMat, d_in, d_out):
   for index1 in range(0, len(normalizedMatrixIn)):
     for index2 in range(index1 + 1, len(normalizedMatrixIn)):
       cVal = compareDir(normalizedMatrixIn[index1], normalizedMatrixIn[index2], normalizedMatrixOut[index1], normalizedMatrixOut[index2])
-      pairs.append((index1, index2, cVal[2]))
-      keyPairs[(index1, index2)] = cVal[2]
+      print "got", cVal
+      pairs.append((index1, index2, cVal[1]))
+      keyPairs[(index1, index2)] = cVal[1]
 
   pairs.sort(key=lambda x: x[2], reverse=False)
   return pairs, keyPairs
@@ -262,44 +307,44 @@ if __name__ == "__main__":
 #   [0, 0, 0, 0, 1, 0],
 #   [0, 0, 0, 0, 0, 2]])
 
-  adjMat_undir = numpy.array([
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]])
-  D = numpy.array([
-    [12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
+#  adjMat_undir = numpy.array([
+#    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]])
+#  D = numpy.array([
+#    [12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+#    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
 
 #  D = numpy.array([
 #    [0, 0, 0, 0],
@@ -316,14 +361,14 @@ if __name__ == "__main__":
   plt.subplot(222)
   graphdisplay.renderUndirGraphFromAdj(adjMat_undir)
   #undirected graph
-  pairs1, keyPairs1 = calcDiffsUndir(adjMat_undir, D)
-  print "Undirected Graph Differences between nodes"
-  printPairs(pairs1)
+  #pairs1, keyPairs1 = calcDiffsUndir(adjMat_undir, D)
+  #print "Undirected Graph Differences between nodes"
+  #printPairs(pairs1)
 
   #directed graph
-  #pairs2, keyPairs2 = calcDiffsDir(adjMat_dir, D_in, D_out)
-  #print "Directed Graph Differences between nodes"
-  #printPairs(pairs2)
+  pairs2, keyPairs2 = calcDiffsDir(adjMat_dir, D_in, D_out)
+  print "Directed Graph Differences between nodes"
+  printPairs(pairs2)
   #for ele2 in pairs2:
   #  cVal1 = ele2[2]
   #  cVal2 = keyPairs3[(ele2[0], ele2[1])]

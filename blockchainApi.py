@@ -62,8 +62,8 @@ def importDataAndGetAddressesFromIndex(address, key):
       addressData = blockexplorer.get_address(address, offset = noTx * 50)
       addressObject["txs"] = addressObject["txs"] + addressData.transactions
       print noTx * 50, "/", addressData.n_tx
-      if noTx > 1:
-        break
+      #if noTx > 1:
+      #  break
     print "processing queried data", len(addressObject["txs"])
     for tx in addressObject["txs"]:
       print "tx", tx.hash
@@ -130,7 +130,7 @@ def getAdjMat(fromAdr, toAdr, adjMat):
     return adjMat[addressToIndex[fromAdr]][addressToIndex[toAdr]]
 
 addresses = {}
-sleepTime = 0.5
+sleepTime = 0.9
 
 addresses = {}
 processedAddresses = []
@@ -162,7 +162,7 @@ for address in edges:
   incomingAddresses = getAllIncomeAddressesFromAddress(address)
   outgoingAddresses = getAllOutgoingAddressesFromAddress(address)
 
-  print "builing D_in"
+  print "building D_in"
   for inAddress in edges[address]["in"]:
     setAdjMat(inAddress, address, 1, adjMat_dir)
   D_in[addressToIndex[address]][addressToIndex[address]] = len(edges[address]["in"])
@@ -172,7 +172,7 @@ for address in edges:
     setAdjMat(address, outAddress, 1, adjMat_dir)
   D_out[addressToIndex[address]][addressToIndex[address]] = len(edges[address]["out"])
 
-  print "builing D"
+  print "building D"
   connectedAddresses = list(set(incomingAddresses + outgoingAddresses))
   for connectedAddress in connectedAddresses:
     setAdjMat(address, connectedAddress, 1, adjMat_undir)
