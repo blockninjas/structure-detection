@@ -4,6 +4,11 @@ import time
 import generateanddisplayrandomgraph
 import graphgenerate
 import numpy
+import requests
+import json
+import httplib
+import http.client
+import subprocess
 
 """
 blockHash = "00000000000001e4277b696b03ed1e085037bcfec8e2a1b7454f9cfd2d936e41"
@@ -34,7 +39,7 @@ def getAddressData(address):
 def txInTxList(tx, txs):
   global addresses
   for txLocal in txs:
-    if txLocal.hash == tx.hash:
+    if txLocal["hash"] == tx["hash"]:
       return True
   return False
 
@@ -44,6 +49,13 @@ def getAllIncomeAddressesFromAddress(address):
 def getAllOutgoingAddressesFromAddress(address):
   return importDataAndGetAddressesFromIndex(address, "outAddresses")
 
+def getAddress(address, offset = 0):
+  url = "blockchain.info"
+  path = "/rawaddr/" + address + "?offset=" + str(offset)
+  subprocess.call(('wget', url + path, '-Otmp.btc', '-oout.tmp'))
+  with open("tmp.btc", "r") as file:
+    return json.loads(file.read())
+
 def importDataAndGetAddressesFromIndex(address, key):
   global addresses
   global sleepTime
@@ -52,34 +64,38 @@ def importDataAndGetAddressesFromIndex(address, key):
   addressObject = None
   print "query for data", key
   if address not in addresses:
+    time.sleep(sleepTime)
     addAddress(address)
     addressObject = addresses[address]
-    addressData = blockexplorer.get_address(address)
-    addressObject["txs"] = addressObject["txs"] + addressData.transactions
-    for noTx in range(1, int(math.ceil(float(addressData.n_tx) / 50.0))):
-      print "getting more data", key
+    addressData = getAddress(address)
+    addressObject["txs"] = addressObject["txs"] + addressData["txs"]
+    print "got first data for", address, "with tx count:", addressData["n_tx"]
+    for noTx in range(1, int(math.ceil(float(addressData["n_tx"]) / 50.0))):
+      print "getting more data", key, "for", address
       time.sleep(sleepTime)
-      addressData = blockexplorer.get_address(address, offset = noTx * 50)
-      addressObject["txs"] = addressObject["txs"] + addressData.transactions
-      print noTx * 50, "/", addressData.n_tx
+      addressData = getAddress(address, offset = noTx * 50)
+      addressObject["txs"] = addressObject["txs"] + addressData["txs"]
+      print noTx * 50, "/", addressData["n_tx"]
       #if noTx > 1:
       #  break
     print "processing queried data", len(addressObject["txs"])
     for tx in addressObject["txs"]:
-      print "tx", tx.hash
-      for input in tx.inputs:
-        if hasattr(input, "address"):
-          if addressObject["address"] == input.address:
-            if not txInTxList(tx, addressObject["out"]):
-              addressObject["out"] = addressObject["out"] + [tx]
-          #if input.address not in inAddresses:
-          inAddresses.append(input.address)
-      for output in tx.outputs:
-        if addressObject["address"] == output.address:
-          if txInTxList(tx, addressObject["in"]):
-            addressObject["in"] = addressObject["in"] + [tx]
-        #if output.address not in outAddresses:
-        outAddresses.append(output.address)
+      print "tx", tx["hash"]
+      for input in tx["inputs"]:
+        if "prev_out" in input:
+          if "addr" in input["prev_out"]:
+            if addressObject["address"] == input["prev_out"]["addr"]:
+              if not txInTxList(tx, addressObject["out"]):
+                addressObject["out"] = addressObject["out"] + [tx]
+            #if input.address not in inAddresses:
+            inAddresses.append(input["prev_out"]["addr"])
+      for output in tx["out"]:
+        if "addr" in output:
+          if addressObject["address"] == output["addr"]:
+            if txInTxList(tx, addressObject["in"]):
+              addressObject["in"] = addressObject["in"] + [tx]
+          #if output.address not in outAddresses:
+          outAddresses.append(output["addr"])
     addressObject["inAddresses"] = numpy.array(numpy.unique(inAddresses))
     addressObject["outAddresses"] = numpy.array(numpy.unique(outAddresses))
     addresses[address] = addressObject
@@ -129,8 +145,11 @@ def getAdjMat(fromAdr, toAdr, adjMat):
   if fromAdr in addressToIndex and toAdr in addressToIndex:
     return adjMat[addressToIndex[fromAdr]][addressToIndex[toAdr]]
 
+def startAddress(adr):
+  processAddress(adr, 1)
+
 addresses = {}
-sleepTime = 0.9
+sleepTime = 0.1
 
 addresses = {}
 processedAddresses = []
@@ -144,10 +163,13 @@ D = []
 D_in = []
 D_out = []
 
-processAddress("1BTCDiceLs79syendE1DM1XCaHcKkzBNnP", 1)
-processAddress("1JDeVnSeRUm7G5okbnmFnRwvfsWDmG2oSe", 1)
-processAddress("16LQodsvHtydHPrsFqBw63c8z6R2F8Nayt", 1)
-processAddress("1BTCDicen28RVKQeMCPKyEcEWFVE9MpJ1i", 1)
+startAddress("1BTCDiceLs79syendE1DM1XCaHcKkzBNnP")
+startAddress("1JDeVnSeRUm7G5okbnmFnRwvfsWDmG2oSe")
+#startAddress("16LQodsvHtydHPrsFqBw63c8z6R2F8Nayt")
+#startAddress("1BTCDicen28RVKQeMCPKyEcEWFVE9MpJ1i")
+#startAddress("1B3tdHVuMhhMV9pAzW5otyYpnd9ApZBues")
+#startAddress("1DBg9if6AjZfkatw6M5uHQ84XqAUyKi3jw")
+#startAddress("1G7HhsyUwA33PcuKtQN3AvttLuuNG1MVkZ")
 
 print "process all addresses"
 for address in addressToIndex:

@@ -44,7 +44,7 @@ def generateFeatureMatrix(adjMat, D):
     matrix.append(featureMatrix)
   return matrix
 
-maxDepth = 3
+maxDepth = 2
 
 def getFeatureMatrixOfNode(adjMat, D, index, depth, processedNodes):
   if depth > maxDepth:# or index in processedNodes:
