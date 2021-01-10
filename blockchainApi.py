@@ -10,7 +10,7 @@ import httplib
 import http.client
 import subprocess
 
-"""
+""" TESTING
 blockHash = "00000000000001e4277b696b03ed1e085037bcfec8e2a1b7454f9cfd2d936e41"
 block = blockexplorer.get_block(blockHash)
 print "building data"

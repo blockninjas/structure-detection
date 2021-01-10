@@ -4,7 +4,6 @@ from scipy import stats
 
 import matplotlib.pyplot as plt
 import matplotlib.figure
-from matplotlib.mlab import PCA
 import graphgenerate
 import graphfeature
 

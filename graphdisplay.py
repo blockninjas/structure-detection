@@ -1,7 +1,6 @@
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
-import motifs
 import numpy as np
 
 def renderDiGraphFromAdj(adjMat):

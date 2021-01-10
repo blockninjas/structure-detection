@@ -71,7 +71,7 @@ D = []
 D_in = []
 D_out = []
 
-startAddress = "........."
+startAddress = "SOME_ADDRESS"
 processAddress(startAddress, 1)
 
 def setAdjMat(from, to, val, adjMat):

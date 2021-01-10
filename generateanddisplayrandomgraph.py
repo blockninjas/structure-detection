@@ -13,7 +13,7 @@ import matplotlib.cm as cm
 import warnings
 import sys
 warnings.simplefilter("ignore")
-nodeCount = 12
+nodeCount = 8
 
 def sqrUndir(v1, v2):
   error = 0
@@ -38,13 +38,13 @@ def ppArray(a, depth=0):
   for ele in a:
     if isinstance(ele, list):
       if isinstance(ele[0], list):
-        print ' ' * (depth * 3), "["
+        print(' ' * (depth * 3), "[")
         ppArray(ele, depth + 1)
-        print ' ' * (depth * 3), "]"
+        print(' ' * (depth * 3), "]")
       else:
-        print ' ' * (depth * 3), str(ele)
+        print(' ' * (depth * 3), str(ele))
     else:
-      print ' ' * (depth * 3), str(ele) + ","
+      print(' ' * (depth * 3), str(ele) + ",")
 
 def compareUndirPart(node1Features, node2Features):
   indexesUsed = []
@@ -202,7 +202,7 @@ def compareDir(node1InFeatures, node2InFeatures, node1OutFeatures, node2OutFeatu
   #print "diff1Out", diff1Out
   #print "diff2In", diff2In
   #print "diff2Out", diff2Out
-  print "returning", (indexes1, diff1) if diff1 < diff2 else (indexes2, diff2) 
+  #print("returning", (indexes1, diff1) if diff1 < diff2 else (indexes2, diff2))
   return (indexes1, diff1) if diff1 < diff2 else (indexes2, diff2)
 
 def diff(v):
@@ -218,12 +218,12 @@ def euclideanDist(v1, v2):
 def printPairs(pairs):
   for pair in pairs:
     if pair[0] != pair[1]:
-      print pair[0], "vs.", pair[1], "=", pair[2]
+      print(pair[0], "vs.", pair[1], "=", pair[2])
 
 def printPairsIndexed(pairs, indexToElement):
   for pair in pairs:
     if pair[0] != pair[1]:
-      print indexToElement[pair[0]], "(", pair[0], ")", "vs.", indexToElement[pair[1]], "(", pair[1], ")", "=", pair[2]
+      print(indexToElement[pair[0]], "(", pair[0], ")", "vs.", indexToElement[pair[1]], "(", pair[1], ")", "=", pair[2])
 
 def cleanFeatureMatrix(featureMatrix):
   finishedMatrix = []
@@ -254,7 +254,7 @@ def calcDiffsUndir(adjMat, DegMat):
   for index1 in range(0, len(normalizedMatrix)):
     for index2 in range(index1 + 1, len(normalizedMatrix)):
       cVal = compareUndir(normalizedMatrix[index1], normalizedMatrix[index2])
-      print cVal
+      #print(cVal)
       pairs.append((index1, index2, cVal[1]))
       keyPairs[(index1, index2)] = cVal[1]
 
@@ -282,7 +282,7 @@ def calcDiffsDir(adjMat, d_in, d_out):
   for index1 in range(0, len(normalizedMatrixIn)):
     for index2 in range(index1 + 1, len(normalizedMatrixIn)):
       cVal = compareDir(normalizedMatrixIn[index1], normalizedMatrixIn[index2], normalizedMatrixOut[index1], normalizedMatrixOut[index2])
-      print "got", cVal
+      #print("got", cVal)
       pairs.append((index1, index2, cVal[1]))
       keyPairs[(index1, index2)] = cVal[1]
 
@@ -361,13 +361,13 @@ if __name__ == "__main__":
   plt.subplot(222)
   graphdisplay.renderUndirGraphFromAdj(adjMat_undir)
   #undirected graph
-  #pairs1, keyPairs1 = calcDiffsUndir(adjMat_undir, D)
-  #print "Undirected Graph Differences between nodes"
-  #printPairs(pairs1)
+  pairs1, keyPairs1 = calcDiffsUndir(adjMat_undir, D)
+  print("Undirected Graph Differences between nodes")
+  printPairs(pairs1)
 
   #directed graph
   pairs2, keyPairs2 = calcDiffsDir(adjMat_dir, D_in, D_out)
-  print "Directed Graph Differences between nodes"
+  print("Directed Graph Differences between nodes")
   printPairs(pairs2)
   #for ele2 in pairs2:
   #  cVal1 = ele2[2]
