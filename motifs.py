@@ -1,4 +1,5 @@
 import numpy as np
+
 m1 = np.matrix("0 0 0; 1 0 0; 1 0 0")
 m2 = np.matrix("0 0 0; 1 0 1; 1 1 0")
 m3 = np.matrix("0 0 1; 1 0 0; 0 1 0")
